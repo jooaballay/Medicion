@@ -1,0 +1,263 @@
+<div class="site-shell">
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Cuenta Pública · Apoyo a Emergencia</span>
+      <h1>Desafío Levantemos Chile</h1>
+      <p>Dashboard de seguimiento para visualizar proyectos, beneficiarios, avance, presupuesto e insumos entregados.</p>
+
+      <a href="https://experience.arcgis.com/experience/fff5bb00e2864a20867605b17b8ed75b"
+         target="_blank"
+         class="sig-button">
+        Ver SIG Territorial
+      </a>
+    </div>
+
+    <div class="hero-badge">
+      <%= image_tag "LOGO-DESAFIO-alta-02.png", class: "hero-logo" %>
+    </div>
+  </section>
+
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <span>Beneficiarios locales</span>
+      <strong>13.545</strong>
+      <p>Número fijo general de la cuenta pública.</p>
+    </article>
+
+    <article class="kpi-card">
+      <span>Recaudación total</span>
+      <strong>$9.129M</strong>
+      <p>Aportes monetarios y especies valorizadas.</p>
+    </article>
+
+    <article class="kpi-card">
+      <span>Insumos</span>
+      <strong>544.773</strong>
+      <p>Elementos gestionados para la emergencia.</p>
+    </article>
+
+    <article class="kpi-card">
+      <span>Kits</span>
+      <strong>1.135</strong>
+      <p>Paquetes de ayuda preparados y entregados.</p>
+    </article>
+  </section>
+
+  <section class="content-grid">
+    <article class="panel project-selector">
+      <div class="section-title">
+        <span>01</span>
+        <div>
+          <h2>Proyectos en ejecución</h2>
+          <p>Filtra por área y luego selecciona un proyecto.</p>
+        </div>
+      </div>
+
+      <label for="areaSelect">Área</label>
+      <select id="areaSelect">
+        <option value="">Todas las áreas</option>
+        <% @projects
+     .select { |p| p[:descripcion].present? }
+     .map { |p| p[:area] }
+     .uniq
+     .reject(&:blank?)
+     .sort
+     .each do |area| %>
+      
+          <option value="<%= area %>"><%= area %></option>
+        <% end %>
+      </select>
+
+      <label for="projectSelect">Nombre intervención</label>
+      <select id="projectSelect">
+        <option value="">Selecciona un proyecto</option>
+      </select>
+
+      <div class="map-card">
+        <span>Coordenadas del proyecto</span>
+        <strong id="projectCoordinates">Sin proyecto seleccionado</strong>
+      </div>
+    </article>
+
+    <article class="panel project-detail">
+      <div class="section-title">
+        <span>02</span>
+        <div>
+          <h2>Descripción del proyecto</h2>
+          <p>Información asociada a la intervención seleccionada.</p>
+        </div>
+      </div>
+
+      <div class="description-box">
+        <h3 id="projectName">Selecciona un proyecto</h3>
+        <p id="projectDescription">Aquí se mostrará la descripción del proyecto seleccionado.</p>
+      </div>
+
+      <div class="project-metrics">
+        <div>
+          <span>N° beneficiarios</span>
+          <strong id="projectBeneficiarios">0</strong>
+        </div>
+
+        <div>
+          <span>% avance</span>
+          <strong id="projectAvance">0%</strong>
+        </div>
+
+        <div>
+          <span>Presupuesto</span>
+          <strong id="projectPresupuesto">$0</strong>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel insumos-panel">
+    <div class="section-title">
+      <span>03</span>
+      <div>
+        <h2>Desglose de insumos</h2>
+        <p>Filtra por categoría para ver los insumos asociados.</p>
+      </div>
+    </div>
+
+    <div class="insumo-filter">
+      <label for="categoryFilter">Categoría de insumo</label>
+      <select id="categoryFilter">
+        <option value="">Todas las categorías</option>
+        <% @insumos.map { |i| i[:categoria] }.uniq.reject(&:blank?).sort.each do |categoria| %>
+          <option value="<%= categoria %>"><%= categoria %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Categoría</th>
+            <th>Financiamiento</th>
+            <th>Estado</th>
+            <th>Cantidad</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody id="insumosTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script id="projectsData" type="application/json">
+  <%= raw json_escape(@projects.to_json) %>
+</script>
+
+<script id="insumosData" type="application/json">
+  <%= raw json_escape(@insumos.to_json) %>
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const projects = JSON.parse(document.getElementById("projectsData").textContent || "[]");
+    const insumos = JSON.parse(document.getElementById("insumosData").textContent || "[]");
+
+    const areaSelect = document.getElementById("areaSelect");
+    const projectSelect = document.getElementById("projectSelect");
+    const nameBox = document.getElementById("projectName");
+    const descriptionBox = document.getElementById("projectDescription");
+    const beneficiariosBox = document.getElementById("projectBeneficiarios");
+    const avanceBox = document.getElementById("projectAvance");
+    const presupuestoBox = document.getElementById("projectPresupuesto");
+    const coordinatesBox = document.getElementById("projectCoordinates");
+
+    function clearProjectDetail() {
+      nameBox.textContent = "Selecciona un proyecto";
+      descriptionBox.textContent = "Aquí se mostrará la descripción del proyecto seleccionado.";
+      beneficiariosBox.textContent = "0";
+      avanceBox.textContent = "0%";
+      presupuestoBox.textContent = "$0";
+      coordinatesBox.textContent = "Sin proyecto seleccionado";
+    }
+
+function loadProjectOptions() {
+  const selectedArea = areaSelect.value;
+
+  const filteredProjects = projects.filter((project) => {
+    const hasDescription =
+      project.descripcion &&
+      project.descripcion.toString().trim() !== "";
+
+    const matchesArea =
+      selectedArea === "" || project.area === selectedArea;
+
+    return hasDescription && matchesArea;
+  });
+
+  projectSelect.innerHTML = '<option value="">Selecciona un proyecto</option>';
+
+  filteredProjects.forEach((project) => {
+    const originalIndex = projects.indexOf(project);
+
+    projectSelect.innerHTML += `
+      <option value="${originalIndex}">
+        ${project.nombre}
+      </option>
+    `;
+  });
+
+  clearProjectDetail();
+}
+
+    function renderProjectDetail() {
+      const project = projects[projectSelect.value];
+
+      if (!project) {
+        clearProjectDetail();
+        return;
+      }
+
+      nameBox.textContent = project.nombre || "-";
+      descriptionBox.textContent = project.descripcion || "-";
+      beneficiariosBox.textContent = project.beneficiarios || "0";
+      avanceBox.textContent = project.avance || "0%";
+      presupuestoBox.textContent = project.presupuesto || "$0";
+
+      coordinatesBox.innerHTML =
+        project.latitud && project.longitud
+          ? "Lat: " + project.latitud + "<br>Lng: " + project.longitud
+          : "Proyecto sin coordenadas";
+    }
+
+    areaSelect.addEventListener("change", loadProjectOptions);
+    projectSelect.addEventListener("change", renderProjectDetail);
+    loadProjectOptions();
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    const insumosTableBody = document.getElementById("insumosTableBody");
+
+    function renderInsumos() {
+      const selectedCategory = categoryFilter.value;
+
+      const filteredInsumos = insumos.filter(function (insumo) {
+        return selectedCategory === "" || insumo.categoria === selectedCategory;
+      });
+
+      insumosTableBody.innerHTML = "";
+
+      filteredInsumos.forEach(function (insumo) {
+        const row = document.createElement("tr");
+
+        ["categoria", "financiamiento", "estado", "cantidad", "detalle"].forEach(function (field) {
+          const cell = document.createElement("td");
+          cell.textContent = insumo[field] || "-";
+          row.appendChild(cell);
+        });
+
+        insumosTableBody.appendChild(row);
+      });
+    }
+
+    categoryFilter.addEventListener("change", renderInsumos);
+    renderInsumos();
+  });
+</script>
