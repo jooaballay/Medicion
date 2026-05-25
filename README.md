@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # README
 
 This README would normally document whatever steps are necessary to get the
@@ -22,3 +23,8 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+=======
+# Medicion
+
+Repositorio para editar la página de la cuenta pública
+>>>>>>> caae1e3591be0f5cc5c8d798f37051ca4a01aa06
