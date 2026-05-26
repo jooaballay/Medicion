@@ -5,7 +5,7 @@ require "uri"
 class GoogleSheetsService
   SPREADSHEET_ID = "1qBOCfbruLYvnz_91H2HTj571LdehDYrG"
   PROJECTS_SHEET = "Solo uso informático"
-  INSUMOS_SHEET = "Proyectos emergencia VF"
+  INSUMOS_SHEET = "Deglose Insumos"
 
   def self.fetch_projects
     rows_from(PROJECTS_SHEET).map do |row|
