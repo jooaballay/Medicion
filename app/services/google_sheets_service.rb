@@ -10,14 +10,14 @@ class GoogleSheetsService
   def self.fetch_projects
     rows_from(PROJECTS_SHEET).map do |row|
       {
-        area: find_value(row, ["Area", "Área", "AREA", "area"]),
-        nombre: find_value(row, ["Nombre intervención", "Nombre intervencion", "Proyecto"]),
-        descripcion: find_value(row, ["Descripción", "Descripcion"]),
-        avance: find_value(row, ["% de avance", "% avance", "%AVANCE", "Avance"]),
-        presupuesto: find_value(row, ["Presupuesto", "Presupuesto ejecutado", "PRESUPUESTO EJECUTADO"]),
-        beneficiarios: find_value(row, ["Beneficiarios", "N° de BENEFICIARIOS", "N° Beneficiarios"]),
-        latitud: find_value(row, ["Latitud", "latitud"]),
-        longitud: find_value(row, ["Longitud", "longitud"])
+        area: find_value(row, [ "Area", "Área", "AREA", "area" ]),
+        nombre: find_value(row, [ "Nombre intervención", "Nombre intervencion", "Proyecto" ]),
+        descripcion: find_value(row, [ "Descripción", "Descripcion" ]),
+        avance: find_value(row, [ "% de avance", "% avance", "%AVANCE", "Avance" ]),
+        presupuesto: find_value(row, [ "Presupuesto", "Presupuesto ejecutado", "PRESUPUESTO EJECUTADO" ]),
+        beneficiarios: find_value(row, [ "Beneficiarios", "N° de BENEFICIARIOS", "N° Beneficiarios" ]),
+        latitud: find_value(row, [ "Latitud", "latitud" ]),
+        longitud: find_value(row, [ "Longitud", "longitud" ])
       }
     end.reject { |p| p[:nombre].blank? }
   end
@@ -25,17 +25,17 @@ class GoogleSheetsService
   def self.fetch_insumos
     rows_from(INSUMOS_SHEET).map do |row|
       {
-        categoria: find_value(row, ["Categoría", "Categoria"]),
-        financiamiento: find_value(row, ["Financiamiento"]),
-        estado: find_value(row, ["Estado"]),
-        cantidad: find_value(row, ["Cantidad"]),
-        detalle: find_value(row, ["Detalle"])
+        categoria: find_value(row, [ "Categoría", "Categoria" ]),
+        financiamiento: find_value(row, [ "Financiamiento" ]),
+        estado: find_value(row, [ "Estado" ]),
+        cantidad: find_value(row, [ "Cantidad" ]),
+        detalle: find_value(row, [ "Detalle" ])
       }
     end.reject { |i| i.values.all?(&:blank?) }
   end
 
   def self.rows_from(sheet_name)
-    url = "https://docs.google.com/spreadsheets/d/#{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=#{URI.encode_www_form_component(sheet_name)}"
+    url = "https://docs.google.com/spreadsheets/d/#{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=#{URI.encode_www_form_component(sheet_name)}&t=#{Time.now.to_i}"
     response = HTTParty.get(url)
 
     body = response.body.to_s.encode(
